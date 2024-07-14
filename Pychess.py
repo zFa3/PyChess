@@ -28,13 +28,14 @@ tt = {}
 
 def stress_testing():
     with open("TestPositions.txt") as file:
-        for i in (file.readlines()):
+        for t, i in enumerate(file.readlines()):
             CHESS_BOARD = ch.Board(fen = i[1:-2])
             score = negamax(DEPTH, CHESS_BOARD)
             if score[0] < 1e9:
-                print("FAILED:", i)
+                print("FAILED:", i, t)
+                break
             else:
-                print("ACCEPTED:", i)
+                print("ACCEPTED:", i, t)
 
 def testing():
     while True:
@@ -54,7 +55,7 @@ def testing():
         while True:
             # input validation, because humans mess up
             try:
-                dmmm = input("Enter your Move here: (uci format, you play as black): ")
+                dmmm = input()
                 if len(dmmm) < 4: CHESS_BOARD.push_san(dmmm); break
                 else: CHESS_BOARD.push_uci(dmmm); break
             except Exception as Error: print(Error)
@@ -147,5 +148,5 @@ def evaluate(position: ch.Board, player: bool) -> int:
     tt[position.board_fen()] = score
     return score
 
-#stress_testing()
-testing()
+stress_testing()
+#testing()
