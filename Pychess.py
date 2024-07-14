@@ -1,17 +1,17 @@
 #!/usr/bin/env pypy3
-# zFa3 - Mini Chess Engine
 
 #https://en.wikipedia.org/wiki/Alpha%E2%80%93beta_pruning
-# useful resource ^^^
+# userfule resource ^^^
 import chess as ch, time as tm
 
 DEPTH = int(input("Depth? around 3 recommended -"))
 FEN = (
-ch.STARTING_FEN
+"r2qkb1r/pp2nppp/3p4/2pNN1B1/2BnP3/3P4/PPP2PPP/R2bK2R w KQkq - 1 0"
 )
 
 # test positions
 '''
+ch.STARTING_FEN
 "rnbqkbn1/ppppp3/7r/6pp/3P1p2/3BP1B1/PPP2PPP/RN1QK1NR w - - 1 0"
 "r1b1k2r/ppQ1q2n/2p2p2/P3p2p/N3P1pP/1B4P1/1PP2P2/3R1NK1 w - - 1 0"
 "5K2/Q7/8/8/1N6/8/pppppppp/rnbqkbnr w - - 0 1"
@@ -25,6 +25,16 @@ ch.STARTING_FEN
 best_move = None
 CHESS_BOARD = ch.Board(fen=FEN)
 tt = {}
+
+def stress_testing():
+    with open("TestPositions.txt") as file:
+        for i in (file.readlines()):
+            CHESS_BOARD = ch.Board(fen = i[1:-2])
+            score = negamax(DEPTH, CHESS_BOARD)
+            if score[0] < 1e9:
+                print("FAILED:", i)
+            else:
+                print("ACCEPTED:", i)
 
 def testing():
     while True:
@@ -55,7 +65,7 @@ def negamax(depth: int, position: ch.Board):
     # depth mate ensures we choose the fastest way to checkmate
     # the opponent, if we dont then we may get stuck in a loop and
     # end up in threefold repetition  
-    moves = position.legal_moves
+    moves = list(position.legal_moves)
     best_evaluation = float("-inf")
     for i in range(len(moves)):
         # play a move
@@ -63,14 +73,15 @@ def negamax(depth: int, position: ch.Board):
         depth_mate = DEPTH * 1000
         # how good is that move?
         child_eval = search(depth - 1, False, position, float("-inf"), float("inf"))
-        print("\033c", moves[i], child_eval)
+        # FIXME TESTING
+        # print("\033c", moves[i], child_eval)
         # undo the move to try the next one
         position.pop()
         # if it is a mate move, then we save it
         if child_eval == 1e9:
             child_eval *= depth_mate
             # debugging
-            print(f"Mate: {moves[i]} {child_eval} {(depth_mate)}")
+            # print(f"Mate: {moves[i]} {child_eval} {(depth_mate)}")
         # if it is a good move, then we save it
         if child_eval >= best_evaluation:
             best_move = moves[i]
@@ -84,7 +95,7 @@ def search(depth: int, max_player: bool, position: ch.Board, alpha, beta):
     # it searches both blakc and white moves 
     global depth_mate
     depth_mate -= 1 # increment the depth mate
-    moves = position.legal_moves
+    moves = list(position.legal_moves)
     if depth < 1 or len(moves) == 0:
         # if max player means if computer is to move
         return int(evaluate(position, max_player))
@@ -117,7 +128,7 @@ def search(depth: int, max_player: bool, position: ch.Board, alpha, beta):
 def evaluate(position: ch.Board, player: bool) -> int:
     # global the transposition table
     global tt
-    # set score to zero
+    # list score to zero
     score = 0
     try: return tt[position.board_fen()]
     except: pass
@@ -136,4 +147,5 @@ def evaluate(position: ch.Board, player: bool) -> int:
     tt[position.board_fen()] = score
     return score
 
-testing()
+stress_testing()
+#testing()
