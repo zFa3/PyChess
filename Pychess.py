@@ -6,12 +6,12 @@ import chess as ch, time as tm
 
 DEPTH = int(input("Depth? around 3 recommended -"))
 FEN = (
-"r2qkb1r/pp2nppp/3p4/2pNN1B1/2BnP3/3P4/PPP2PPP/R2bK2R w KQkq - 1 0"
+ch.STARTING_FEN
 )
-
 # test positions
 '''
-ch.STARTING_FEN
+"r1b1kb1r/pppp1ppp/5q2/4n3/3KP3/2N3PN/PPP4P/R1BQ1B1R b kq - 0 1"
+"r2qkb1r/pp2nppp/3p4/2pNN1B1/2BnP3/3P4/PPP2PPP/R2bK2R w KQkq - 1 0"
 "rnbqkbn1/ppppp3/7r/6pp/3P1p2/3BP1B1/PPP2PPP/RN1QK1NR w - - 1 0"
 "r1b1k2r/ppQ1q2n/2p2p2/P3p2p/N3P1pP/1B4P1/1PP2P2/3R1NK1 w - - 1 0"
 "5K2/Q7/8/8/1N6/8/pppppppp/rnbqkbnr w - - 0 1"
@@ -25,10 +25,14 @@ ch.STARTING_FEN
 best_move = None
 CHESS_BOARD = ch.Board(fen=FEN)
 tt = {}
+attackingWeight = 1
 
 def stress_testing():
+    start = int(input("Start at which test position?:"))
     with open("TestPositions.txt") as file:
         for t, i in enumerate(file.readlines()):
+            if t < start:
+                continue
             CHESS_BOARD = ch.Board(fen = i[1:-2])
             score = negamax(DEPTH, CHESS_BOARD)
             if score[0] < 1e9:
@@ -60,6 +64,10 @@ def testing():
                 else: CHESS_BOARD.push_uci(dmmm); break
             except Exception as Error: print(Error)
 
+def find_piece_from(move: str):
+    move = str(move)
+    return abs(int(move[1]) - 8) * 8 + ord(move[0]) - 97
+
 def negamax(depth: int, position: ch.Board):
     # the player variable was kinda useless
     global depth_mate
@@ -67,6 +75,9 @@ def negamax(depth: int, position: ch.Board):
     # the opponent, if we dont then we may get stuck in a loop and
     # end up in threefold repetition  
     moves = list(position.legal_moves)
+    # attacking sorting
+    moves = sorted(moves, key = lambda x: int.bit_count(int(position.attacks(find_piece_from(x)))))
+
     best_evaluation = float("-inf")
     for i in range(len(moves)):
         # play a move
@@ -75,14 +86,14 @@ def negamax(depth: int, position: ch.Board):
         # how good is that move?
         child_eval = search(depth - 1, False, position, float("-inf"), float("inf"))
         # FIXME TESTING
-        # print("\033c", moves[i], child_eval)
+        print("\033c", moves[i], child_eval)
         # undo the move to try the next one
         position.pop()
         # if it is a mate move, then we save it
         if child_eval == 1e9:
             child_eval *= depth_mate
             # debugging
-            # print(f"Mate: {moves[i]} {child_eval} {(depth_mate)}")
+            print(f"Mate: {moves[i]} {child_eval} {(depth_mate)}")
         # if it is a good move, then we save it
         if child_eval >= best_evaluation:
             best_move = moves[i]
@@ -140,7 +151,8 @@ def evaluate(position: ch.Board, player: bool) -> int:
     if position.is_stalemate(): return 0
     # not sure which one is better
     # option 1
-    score += sum([int.bit_count(position.attackers_mask(color=ch.WHITE, square=i)) for i in range(64)])
+    score += sum([int.bit_count(position.attackers_mask(color=ch.WHITE, square=i)) for i in range(64)]) * attackingWeight
+    #score += sum([int.bit_count(int(position.attackers(color=ch.WHITE, square=i))) for i in range(64)]) * attackingWeight
     # option 2
     for i in range(64): score += int.bit_count(position.attacks_mask(square=i))
     # count the pieces
@@ -148,5 +160,5 @@ def evaluate(position: ch.Board, player: bool) -> int:
     tt[position.board_fen()] = score
     return score
 
-stress_testing()
-#testing()
+#stress_testing()
+testing()
