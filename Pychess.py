@@ -55,7 +55,7 @@ def testing():
         while True:
             # input validation, because humans mess up
             try:
-                dmmm = input()
+                dmmm = input("Enter your Move here: (uci format, you play as black): ")
                 if len(dmmm) < 4: CHESS_BOARD.push_san(dmmm); break
                 else: CHESS_BOARD.push_uci(dmmm); break
             except Exception as Error: print(Error)
