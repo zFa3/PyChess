@@ -68,6 +68,12 @@ def find_piece_from(move: str):
     move = str(move)
     return abs(int(move[1]) - 8) * 8 + ord(move[0]) - 97
 
+def mvv_lva(position:ch.Board, move: ch.Move):
+    try:
+        piece_value = {"k":5,"q":4,"r":3,"b":2,"n":1,"p":0}
+        return piece_value[position.piece_at(move.to_square)]
+    except: return -1
+
 def negamax(depth: int, position: ch.Board):
     # the player variable was kinda useless
     global depth_mate
@@ -76,7 +82,8 @@ def negamax(depth: int, position: ch.Board):
     # end up in threefold repetition  
     moves = list(position.legal_moves)
     # attacking sorting
-    moves = sorted(moves, key = lambda x: int.bit_count(int(position.attacks(find_piece_from(x)))))
+    #moves = sorted(moves, key = lambda move: int.bit_count(int(position.attacks(find_piece_from(move)))))
+    moves = sorted(moves, key = lambda move: mvv_lva(position, move))
 
     best_evaluation = float("-inf")
     for i in range(len(moves)):
@@ -108,6 +115,7 @@ def search(depth: int, max_player: bool, position: ch.Board, alpha, beta):
     global depth_mate
     depth_mate -= 1 # increment the depth mate
     moves = list(position.legal_moves)
+    moves = sorted(moves, key = lambda move: mvv_lva(position, move))
     if depth < 1 or len(moves) == 0:
         # if max player means if computer is to move
         return int(evaluate(position, max_player))
@@ -149,13 +157,11 @@ def evaluate(position: ch.Board, player: bool) -> int:
     # if we can checkmate the opponent
     if position.is_checkmate(): return -1e9 if player else 1e9
     if position.is_stalemate(): return 0
-    # not sure which one is better
-    # option 1
+    # count the number of (black) pieces each (white) piece attacks    
     score += sum([int.bit_count(position.attackers_mask(color=ch.WHITE, square=i)) for i in range(64)]) * attackingWeight
-    #score += sum([int.bit_count(int(position.attackers(color=ch.WHITE, square=i))) for i in range(64)]) * attackingWeight
-    # option 2
+    # count the squares that each piece attacks
     for i in range(64): score += int.bit_count(position.attacks_mask(square=i))
-    # count the pieces
+    # count the number of pieces
     score += int.bit_count(position.attacks_mask(square=i)) + int.bit_count(position.pieces_mask(piece_type=ch.QUEEN, color=ch.BLACK)) * -900 + int.bit_count(position.pieces_mask(piece_type=ch.ROOK, color=ch.BLACK)) * -450 + int.bit_count(position.pieces_mask(piece_type=ch.BISHOP, color=ch.BLACK)) * -330 + int.bit_count(position.pieces_mask(piece_type=ch.KNIGHT, color=ch.BLACK)) * -320 + int.bit_count(position.pieces_mask(piece_type=ch.PAWN, color=ch.BLACK)) * -100 + int.bit_count(position.pieces_mask(piece_type=ch.QUEEN, color=ch.WHITE)) * 900 + int.bit_count(position.pieces_mask(piece_type=ch.ROOK, color=ch.WHITE)) * 450 + int.bit_count(position.pieces_mask(piece_type=ch.BISHOP, color=ch.WHITE)) * 330 + int.bit_count(position.pieces_mask(piece_type=ch.KNIGHT, color=ch.WHITE)) * 320 + int.bit_count(position.pieces_mask(piece_type=ch.PAWN, color=ch.WHITE)) * 100
     tt[position.board_fen()] = score
     return score
