@@ -26,6 +26,7 @@ best_move = None
 CHESS_BOARD = ch.Board(fen=FEN)
 tt = {}
 attackingWeight = 1
+moveSort = False
 
 def stress_testing():
     start = int(input("Start at which test position?:"))
@@ -83,7 +84,8 @@ def negamax(depth: int, position: ch.Board):
     moves = list(position.legal_moves)
     # attacking sorting
     #moves = sorted(moves, key = lambda move: int.bit_count(int(position.attacks(find_piece_from(move)))))
-    moves = sorted(moves, key = lambda move: mvv_lva(position, move))
+    if moveSort:
+        moves = sorted(moves, key = lambda move: mvv_lva(position, move))
 
     best_evaluation = float("-inf")
     for i in range(len(moves)):
@@ -111,11 +113,12 @@ def negamax(depth: int, position: ch.Board):
 
 def search(depth: int, max_player: bool, position: ch.Board, alpha, beta):
     # this function is basically the same as the negamax one, however
-    # it searches both blakc and white moves 
+    # it searches both black and white moves 
     global depth_mate
     depth_mate -= 1 # increment the depth mate
     moves = list(position.legal_moves)
-    moves = sorted(moves, key = lambda move: mvv_lva(position, move))
+    if moveSort:
+        moves = sorted(moves, key = lambda move: mvv_lva(position, move))
     if depth < 1 or len(moves) == 0:
         # if max player means if computer is to move
         return int(evaluate(position, max_player))
@@ -153,16 +156,16 @@ def evaluate(position: ch.Board, player: bool) -> int:
     try: return tt[position.board_fen()]
     except: pass
     # check for some overriding factors to the position
-    # by that I mean it doesn't matter if we lose a queen
+    # by that I mean: it doesn't matter if we lose a queen
     # if we can checkmate the opponent
     if position.is_checkmate(): return -1e9 if player else 1e9
     if position.is_stalemate(): return 0
     # count the number of (black) pieces each (white) piece attacks    
-    score += sum([int.bit_count(position.attackers_mask(color=ch.WHITE, square=i)) for i in range(64)]) * attackingWeight
+    ### score += sum([int.bit_count(position.attackers_mask(color=ch.WHITE, square=i)) for i in range(64)]) * attackingWeight
     # count the squares that each piece attacks
     for i in range(64): score += int.bit_count(position.attacks_mask(square=i))
     # count the number of pieces
-    score += int.bit_count(position.attacks_mask(square=i)) + int.bit_count(position.pieces_mask(piece_type=ch.QUEEN, color=ch.BLACK)) * -900 + int.bit_count(position.pieces_mask(piece_type=ch.ROOK, color=ch.BLACK)) * -450 + int.bit_count(position.pieces_mask(piece_type=ch.BISHOP, color=ch.BLACK)) * -330 + int.bit_count(position.pieces_mask(piece_type=ch.KNIGHT, color=ch.BLACK)) * -320 + int.bit_count(position.pieces_mask(piece_type=ch.PAWN, color=ch.BLACK)) * -100 + int.bit_count(position.pieces_mask(piece_type=ch.QUEEN, color=ch.WHITE)) * 900 + int.bit_count(position.pieces_mask(piece_type=ch.ROOK, color=ch.WHITE)) * 450 + int.bit_count(position.pieces_mask(piece_type=ch.BISHOP, color=ch.WHITE)) * 330 + int.bit_count(position.pieces_mask(piece_type=ch.KNIGHT, color=ch.WHITE)) * 320 + int.bit_count(position.pieces_mask(piece_type=ch.PAWN, color=ch.WHITE)) * 100
+    score += int.bit_count(position.pieces_mask(piece_type=ch.QUEEN, color=ch.BLACK)) * -900 + int.bit_count(position.pieces_mask(piece_type=ch.ROOK, color=ch.BLACK)) * -450 + int.bit_count(position.pieces_mask(piece_type=ch.BISHOP, color=ch.BLACK)) * -330 + int.bit_count(position.pieces_mask(piece_type=ch.KNIGHT, color=ch.BLACK)) * -320 + int.bit_count(position.pieces_mask(piece_type=ch.PAWN, color=ch.BLACK)) * -100 + int.bit_count(position.pieces_mask(piece_type=ch.QUEEN, color=ch.WHITE)) * 900 + int.bit_count(position.pieces_mask(piece_type=ch.ROOK, color=ch.WHITE)) * 450 + int.bit_count(position.pieces_mask(piece_type=ch.BISHOP, color=ch.WHITE)) * 330 + int.bit_count(position.pieces_mask(piece_type=ch.KNIGHT, color=ch.WHITE)) * 320 + int.bit_count(position.pieces_mask(piece_type=ch.PAWN, color=ch.WHITE)) * 100
     tt[position.board_fen()] = score
     return score
 
